@@ -1,0 +1,268 @@
+{
+  "name": "httpsolve error",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "db07aa2a-3c32-40a6-a2b1-05c884689370",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        840,
+        660
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Define the columns you want to keep\nconst requiredColumns = [\"Name\", \"Email\", \"Status\", \"Notes\"];\n\n// Get the array of input items\nconst inputItems = $input.all();\n\n// Map and extract only the required fields\nconst result = inputItems.map(item => {\n  const extracted = {};\n  for (const col of requiredColumns) {\n    const val = item.json[col];\n    extracted[col] = typeof val === \"string\" ? val.trim() : val;\n  }\n  return { json: extracted };\n});\n\nreturn result;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1280,
+        660
+      ],
+      "id": "8a1c8d69-6226-4e3f-bcb3-5176e17218d4",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "documentId": {
+          "__rl": true,
+          "value": "1nOzW34iSsFKLq-fVCn1BT-cW0XQxpWVzYFIKskoliHk",
+          "mode": "list",
+          "cachedResultName": "ai_call",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1nOzW34iSsFKLq-fVCn1BT-cW0XQxpWVzYFIKskoliHk/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1nOzW34iSsFKLq-fVCn1BT-cW0XQxpWVzYFIKskoliHk/edit#gid=0"
+        },
+        "includeInOutput": "both",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTrigger",
+      "typeVersion": 1,
+      "position": [
+        1060,
+        660
+      ],
+      "id": "ed2857b4-edf2-463e-8d3e-1d7d948afc20",
+      "name": "Google Sheets Trigger",
+      "credentials": {
+        "googleSheetsTriggerOAuth2Api": {
+          "id": "CWFfIcGM6uTxh95U",
+          "name": "Google Sheets Trigger account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1500,
+        660
+      ],
+      "id": "052a1e13-a397-4d51-8c0a-6b22e000f874",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "name": "Replace Me",
+      "typeVersion": 1,
+      "position": [
+        1980,
+        680
+      ],
+      "id": "d4e54546-3548-4a3c-af69-b1455b1f6d6b"
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\nconst data = item.json;\n\nreturn {\njson: {\nsystemPrompt: `You are a professional assistant at IM Solutions — a full-service advertising and digital agency based in Bengaluru, India with a team of 50+ experts.\n\nYour task is to write a clear, personalized, and professional email reply to the lead based on their inquiry (notes) and status.\n\nLead Information:\n\nName: ${data.Name || \"Unknown\"}\n\nEmail: ${data.Email || \"Not provided\"}\n\nStatus: ${data.Status || \"New Lead\"}\n\nNotes: ${data.Notes || \"No specific query\"}\n\nInstructions:\n\nBegin the reply with: Hi ${data.Name || \"there\"},\n\nUnderstand and respond directly to their query in the Notes field\n\nUse only relevant company details from IM Solutions to answer their question (do not include full company profile)\n\nMention their lead status if helpful (e.g., \"As a new lead, we’re excited to help you…\")\n\nAvoid listing all services — only mention what's needed to address their interest\n\nEnd the reply politely with:\nBest regards,\nIM Solutions Team\ninfo@imsolutions.mobi | +91-8880564488\n\nImportant:\n\nReturn only the final email body in plain text\n\nDo not include markdown or explanations\n\nKeep the tone warm, professional, and helpful`,\nemail: data.Email || \"\"\n}\n};\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1720,
+        560
+      ],
+      "id": "160ffbd7-2604-4d01-95cf-d3c1afe0f9cd",
+      "name": "Code1"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.systemPrompt }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.6,
+      "position": [
+        2000,
+        480
+      ],
+      "id": "64b4aef3-90a6-47f6-a3f9-cbf03f3a1c7e",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        2000,
+        180
+      ],
+      "id": "0733268f-3d98-4e3c-bfc0-69fbe3b3c0e4",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "RTb2J7TFhcZVdPgg",
+          "name": "Groq account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fromEmail": "phanisri@imsolutions.mobi",
+        "toEmail": "={{ $('Google Sheets Trigger').item.json.Email }}",
+        "subject": "=Regarding your inquiry: {{ $('Google Sheets Trigger').item.json.Notes }}",
+        "emailFormat": "both",
+        "text": "={{ $json.text }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        2460,
+        360
+      ],
+      "id": "77bcb253-777a-43a5-ae4a-ed4fda153640",
+      "name": "Send Email",
+      "webhookId": "095f4f6f-bdaa-4b4b-9fac-857f94b771de",
+      "credentials": {
+        "smtp": {
+          "id": "K8axHpcJhE31dNq6",
+          "name": "SMTP account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        []
+      ]
+    },
+    "Google Sheets Trigger": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Code1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Replace Me",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Replace Me": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code1": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Send Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "08b377d4-2003-4b8d-9608-626e651090f2",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "0ab9a852d89de99062b6011aaef1b7f36f857425ff46ddf9ed7fe46bdeb7b42f"
+  },
+  "id": "b9p3wgLQg05rcv8l",
+  "tags": []
+}
